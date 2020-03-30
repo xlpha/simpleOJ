@@ -1,0 +1,29 @@
+backend/.idea
+backend/.mvn
+backend/*.iws
+backend/* .iml
+backend/*.ipr
+backend/target
+
+
+front/.DS_Store
+front/node_modules
+front/dist
+
+# local env files
+front/.env.local
+front/.env. * .local
+
+# Log files
+front/npm - debug.log * 
+front/yarn - debug.log * 
+front/yarn - error.log * 
+
+# Editor directories and files
+front/.idea
+front/.vscode
+front/*.suo
+front/* .ntvs * 
+front/*.njsproj
+front/* .sln
+front/*.sw?
