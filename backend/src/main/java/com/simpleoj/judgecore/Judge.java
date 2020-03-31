@@ -6,7 +6,6 @@ import com.simpleoj.models.db.Submission;
 import com.simpleoj.models.db.TestCase;
 import com.simpleoj.repositories.SubmissionRepository;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.BufferedReader;
@@ -14,30 +13,32 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.*;
 
 public class Judge {
     private Submission submission;
     private Problem problem;
     private List<TestCase> testCases;
-    private String baseDir;
     private LanguageConfig languageConfig;
+
     private String cwd;
-
-    private static final String containerCwd = "/tmp/oj";
-
-    @Value("${simple_oj.judgecore_path}")
-    private final String judgeCoreRunnerPath = "D:/tmp/judgeCore";
+    private final String baseDir;
+    private final String containerCwd;
+    private final String judgeCoreRunnerPath;
 
 
-    public Judge(Submission submission, Problem problem, List<TestCase> testCases, String baseDir,
-                 LanguageConfig languageConfig) {
+    public Judge(Submission submission, Problem problem, List<TestCase> testCases, LanguageConfig languageConfig,
+                 String baseDir, String containerCwd, String runnerPath) {
         this.submission = submission;
         this.problem = problem;
         this.testCases = testCases;
-        this.baseDir = baseDir;
         this.languageConfig = languageConfig;
+        this.baseDir = baseDir;
+        this.containerCwd = containerCwd;
+        this.judgeCoreRunnerPath = runnerPath;
     }
 
     private void saveFile() throws IOException {
@@ -49,9 +50,11 @@ public class Judge {
         String compileCmd = languageConfig.getCompileCmd();
         String imageName = languageConfig.getDockerImageName();
         if (compileCmd == null) return true;    // 有些语言不需要编译，比如Python
-        String cmd = String.format("docker run --rm -i -v %s:%s -w %s %s /bin/sh -c \"%s\"",
-                cwd, containerCwd, containerCwd, imageName,compileCmd);
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd.split(" "));
+        List<String> cmdList = Arrays.asList("docker", "run", "--rm", "-v", cwd + ":" + containerCwd, "-w", containerCwd,
+                imageName, "/bin/sh", "-c", compileCmd);
+
+        System.out.println("compile cmd: " + cmdList.toString());
+        ProcessBuilder processBuilder = new ProcessBuilder(cmdList);
 
         Process process = null;
         try {
@@ -67,6 +70,7 @@ public class Judge {
             boolean isError = false;
             while ((line = br.readLine()) != null) {
                 errMsg.append(line);
+                if (errMsg.length() > 500) break;
                 isError = true;
             }
             if (isError) {
@@ -86,7 +90,6 @@ public class Judge {
         int timeLimit = problem.getRuntimeLimit();
         int memoryLimit = problem.getMemoryLimit() * 1024 * 1000;
         String imageName = languageConfig.getDockerImageName();
-        String cmdFormat = "docker run --rm -i -v %s:%s -w %s %s /bin/sh -c \"%s\"";
         int maxTimeUsed = -1;
         int maxMemoryUsed = -1;
         for (int i = 0; i < testCases.size(); i++) {
@@ -101,9 +104,10 @@ public class Judge {
 
             String runCmd = String.format("./judgeCore '%s' %d %d %s %s",
                     languageConfig.getRunCmd(), timeLimit, memoryLimit, inputFileName, outputFileName);
-            String cmd = String.format(cmdFormat, cwd, containerCwd, containerCwd, imageName, runCmd);
-//            System.out.println(cmd);
-            ProcessBuilder processBuilder = new ProcessBuilder(cmd.split(" "));
+            List<String> cmdList = Arrays.asList("docker", "run", "--rm", "-v", cwd + ":" + containerCwd,
+                    "-w", containerCwd, imageName, "/bin/sh", "-c", runCmd);
+            System.out.println("run cmd: " + cmdList.toString());
+            ProcessBuilder processBuilder = new ProcessBuilder(cmdList);
 
             Process process = processBuilder.start();
             try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -113,8 +117,9 @@ public class Judge {
                     if (line == null) break;
                     sb.append(line);
                 }
-//                System.out.println(sb.toString());
-                JSONObject result = new JSONObject(sb.toString());
+                String resultStr = sb.toString();
+                if (resultStr.isEmpty()) return Submission.STATUS_SERVER_INTERNAL_ERROR;
+                JSONObject result = new JSONObject(resultStr);
                 int status = result.getInt("status");
                 int timeUsed = result.getInt("timeUsed");
                 int memoryUsed = result.getInt("memoryUsed");
@@ -144,6 +149,7 @@ public class Judge {
         new File(cwd).mkdirs();
         try {
             FileCopyUtils.copy(new File(judgeCoreRunnerPath), new File(cwd, "judgeCore"));
+            changeFilePermission(new File(cwd, "judgeCore"));
             saveFile();
         } catch (IOException e) {
             e.printStackTrace();
@@ -166,5 +172,20 @@ public class Judge {
         }
         submission.setStatus(status);
         submissionRepository.save(submission);
+    }
+
+    private void changeFilePermission(File dirFile) throws IOException {
+        Set<PosixFilePermission> perms = new HashSet<>();
+        perms.add(PosixFilePermission.OWNER_READ);
+        perms.add(PosixFilePermission.OWNER_WRITE);
+        perms.add(PosixFilePermission.OWNER_EXECUTE);
+        perms.add(PosixFilePermission.GROUP_READ);
+        perms.add(PosixFilePermission.GROUP_WRITE);
+        perms.add(PosixFilePermission.GROUP_EXECUTE);
+        Path path = Paths.get(dirFile.getAbsolutePath());
+        try {
+            Files.setPosixFilePermissions(path, perms);
+        } catch (UnsupportedOperationException e) {
+        }
     }
 }

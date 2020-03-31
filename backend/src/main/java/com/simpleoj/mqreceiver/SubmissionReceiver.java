@@ -26,8 +26,14 @@ public class SubmissionReceiver {
     @Autowired
     private TestCaseRepository testCaseRepository;
 
-    @Value("${simple_oj.basedir}")
+    @Value("${judgeCore.basedir}")
     private String baseDir;
+
+    @Value("${judgeCore.containerCwd}")
+    private String containerCwd;
+
+    @Value("${judgeCore.runnerPath}")
+    private String runnerPath;
 
     private final LanguageConfig cConfig = new CConfig();
     private final LanguageConfig cppConfig = new CppConfig();
@@ -36,36 +42,38 @@ public class SubmissionReceiver {
 
     @RabbitListener(queues = "submission")
     public void handleSubmitMsg(String msg) {
-        if (msg == null || msg.isEmpty()) return;
-        long id = Long.parseLong(msg);
-        Submission submission = submissionRepository.findById(id).orElse(null);
-        if (submission == null) return;
-        submission.setStatus(Submission.STATUS_RUNNING);
-        submissionRepository.save(submission);
-        Problem problem = problemRepository.findById(submission.getProblemId()).orElse(null);
-        if (problem == null) return;
-        List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
+        try {
+            if (msg == null || msg.isEmpty()) return;
+            long id = Long.parseLong(msg);
+            Submission submission = submissionRepository.findById(id).orElse(null);
+            if (submission == null) return;
+            submission.setStatus(Submission.STATUS_RUNNING);
+            submissionRepository.save(submission);
+            Problem problem = problemRepository.findById(submission.getProblemId()).orElse(null);
+            if (problem == null) return;
+            List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
 
-        LanguageConfig config;
-        switch (submission.getLanguage()) {
-            case Submission.LANGUAGE_C:
-                config = cConfig;
-                break;
-            case Submission.LANGUAGE_CPP:
-                config = cppConfig;
-                break;
-            case Submission.LANGUAGE_JAVA:
-                config = javaConfig;
-                break;
-            case Submission.LANGUAGE_Python:
-                config = pythonConfig;
-                break;
-            default:
-                return;
+            LanguageConfig config;
+            switch (submission.getLanguage()) {
+                case Submission.LANGUAGE_C:
+                    config = cConfig;
+                    break;
+                case Submission.LANGUAGE_CPP:
+                    config = cppConfig;
+                    break;
+                case Submission.LANGUAGE_JAVA:
+                    config = javaConfig;
+                    break;
+                case Submission.LANGUAGE_Python:
+                    config = pythonConfig;
+                    break;
+                default:
+                    return;
+            }
+            Judge judge = new Judge(submission, problem, testCases, config, baseDir, containerCwd, runnerPath);
+            judge.process(submissionRepository);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        Judge judge = new Judge(submission, problem, testCases, baseDir, config);
-        judge.process(submissionRepository);
     }
-
 }

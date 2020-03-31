@@ -1,9 +1,7 @@
 package com.simpleoj.controller;
 
-import com.simpleoj.models.amqp.QueueMessage;
 import com.simpleoj.models.db.Problem;
 import com.simpleoj.models.db.Submission;
-import com.simpleoj.repositories.ProblemRepository;
 import com.simpleoj.repositories.SubmissionRepository;
 import com.simpleoj.service.ProblemService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
