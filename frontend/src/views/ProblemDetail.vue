@@ -18,7 +18,7 @@
             <div style="margin: 20px 0;"></div>
             <el-input
                     type="textarea"
-                    :autosize="{ minRows: 20, maxRows: 100}"
+                    :autosize="{ minRows: 10, maxRows: 100}"
                     placeholder="请输入内容"
                     v-model="form.code">
             </el-input>
@@ -35,7 +35,7 @@
         data() {
             return {
                 problemData: "",
-                languageOptions:[{label: "C", value: 0}, {label: "C++", value: 1},{label: "Java", value: 2},],
+                languageOptions:[{label: "C", value: 0}, {label: "C++", value: 1},{label: "Java", value: 2},{label: "Python3", value: 3}],
                 form: {
                     userId: 1,
                     problemId: this.$route.params.id,

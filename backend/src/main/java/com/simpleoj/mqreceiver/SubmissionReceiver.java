@@ -1,7 +1,7 @@
 package com.simpleoj.mqreceiver;
 
-import com.simpleoj.judgecore.IWorker;
-import com.simpleoj.judgecore.impl.JavaWorker;
+import com.simpleoj.judgecore.Judge;
+import com.simpleoj.judgecore.languageconfig.*;
 import com.simpleoj.models.db.Problem;
 import com.simpleoj.models.db.Submission;
 import com.simpleoj.models.db.TestCase;
@@ -29,33 +29,43 @@ public class SubmissionReceiver {
     @Value("${simple_oj.basedir}")
     private String baseDir;
 
+    private final LanguageConfig cConfig = new CConfig();
+    private final LanguageConfig cppConfig = new CppConfig();
+    private final LanguageConfig javaConfig = new JavaConfig();
+    private final LanguageConfig pythonConfig = new PythonConfig();
+
     @RabbitListener(queues = "submission")
     public void handleSubmitMsg(String msg) {
+        if (msg == null || msg.isEmpty()) return;
         long id = Long.parseLong(msg);
         Submission submission = submissionRepository.findById(id).orElse(null);
         if (submission == null) return;
         submission.setStatus(Submission.STATUS_RUNNING);
+        submissionRepository.save(submission);
         Problem problem = problemRepository.findById(submission.getProblemId()).orElse(null);
         if (problem == null) return;
         List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
 
-        IWorker worker;
+        LanguageConfig config;
         switch (submission.getLanguage()) {
+            case Submission.LANGUAGE_C:
+                config = cConfig;
+                break;
+            case Submission.LANGUAGE_CPP:
+                config = cppConfig;
+                break;
             case Submission.LANGUAGE_JAVA:
-                worker = new JavaWorker();
+                config = javaConfig;
+                break;
+            case Submission.LANGUAGE_Python:
+                config = pythonConfig;
                 break;
             default:
                 return;
         }
 
-        JudgeWorker judgeWorker = new JudgeWorker(submission, problem, testCases, baseDir, worker);
-        judgeWorker.process();
-
-//        submission.setStatus(Submission.STATUS_AC);
-        submissionRepository.save(submission);
+        Judge judge = new Judge(submission, problem, testCases, baseDir, config);
+        judge.process(submissionRepository);
     }
 
-    private void process() {
-
-    }
 }

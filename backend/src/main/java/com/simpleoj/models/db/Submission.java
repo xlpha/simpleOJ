@@ -15,16 +15,17 @@ public class Submission implements Serializable {
     public final static int LANGUAGE_C = 0;
     public final static int LANGUAGE_CPP = 1;
     public final static int LANGUAGE_JAVA = 2;
+    public final static int LANGUAGE_Python = 3;
 
-    public final static int STATUS_QUEUE = -1;
-    public final static int STATUS_RUNNING = -2;
-    public final static int STATUS_SERVER_ERROR = -3;
-    public final static int STATUS_AC = 0;
-    public final static int STATUS_CE = 1;
-    public final static int STATUS_RE = 2;
-    public final static int STATUS_TLE = 3;
-    public final static int STATUS_MLE = 4;
-    public final static int STATUS_WA = 5;
+    public final static int STATUS_QUEUE = -1;      //等待评测中
+    public final static int STATUS_RUNNING = -2;    //正在评测中
+    public final static int STATUS_SERVER_INTERNAL_ERROR = -3;  //服务器内部错误
+    public final static int STATUS_Accept = 0;
+    public final static int STATUS_CompileError = 1;
+    public final static int STATUS_RuntimeError = 2;
+    public final static int STATUS_TimeLimitExceed = 3;
+    public final static int STATUS_MemoryLimitExceed = 4;
+    public final static int STATUS_WrongAnswer = 5;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
