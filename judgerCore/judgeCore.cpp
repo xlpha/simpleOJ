@@ -127,7 +127,7 @@ int run(const char* cmdStr, const char* in, const char* out) {
     } else {
         struct result rest;
         monitor(pid, &rest);
-        printf("{\"status\":%d,\"timeUsed:\":%d,\"memoryUsed:\":%d}\n", rest.status, rest.timeUsed,
+        printf("{\"status\":%d,\"timeUsed\":%d,\"memoryUsed\":%d}\n", rest.status, rest.timeUsed,
                rest.memoryUsed);
     }
 }
