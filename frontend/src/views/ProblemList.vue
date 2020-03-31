@@ -16,23 +16,7 @@
         name: 'app',
         data() {
             return {
-                tableData: [{
-                    id: '1',
-                    title: 'a+b',
-                    level: '上海市普陀区金沙江路 1518 弄'
-                }, {
-                    id: '2',
-                    title: 'a-b',
-                    level: '上海市普陀区金沙江路 1518 弄'
-                }, {
-                    id: '3',
-                    title: 'a*b',
-                    level: '上海市普陀区金沙江路 1518 弄'
-                }, {
-                    id: '4',
-                    title: 'a+b',
-                    level: '上海市普陀区金沙江路 1518 弄'
-                }]
+                tableData: []
             }
         },
         methods: {
