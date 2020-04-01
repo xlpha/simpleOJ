@@ -49,9 +49,6 @@ void split(char** arr, char* str, const char* del) {
     *arr++ = NULL;
 }
 
-/*
- run the user process
-*/
 /**
  * 运行用户提交的程序
  */
