@@ -3,7 +3,7 @@
 
 前端使用 Vue 框架，后端使用 Spring Boot 框架，数据库使用 MySQL，配合 Redis 作为缓存。后端与判题模块之间通过 RabbitMQ 消息队列解耦。
 
-为了防止用户提交恶意代码，判题核心是在 Docker 容器中运行。判题核心使用C语言编写，通过 Linux 系统调用 wait4 获取进程所使用的时间和内存信息。
+为了防止用户提交恶意代码，判题核心是在 Docker 容器中运行。判题核心使用C语言编写，通过 Linux 系统调用 wait4 获取进程所使用的时间和内存信息以及是否异常退出（超时、超内存、段错误等等）。
 
 项目在线演示：http://175.24.22.194:8080/
 
@@ -50,7 +50,7 @@ Web部分没什么好说的，网上看看Spring Boot和Vue的教程即可，这
       2. 生成docker命令，比如对于Java，命令为
 
          ```
-         docker run --rm -v $cwd:$containerCwd -w containerCwd openjdk:8 /bin/sh -c "./judgeCore 'java Main' 3000 65535000 0-in.txt 0-out.txt"
+         docker run --rm -v $cwd:$containerCwd -w $containerCwd openjdk:8 /bin/sh -c "./judgeCore 'java Main' 3000 65535000 0-in.txt 0-out.txt"
          judgeCore的5个命令参数分别是 运行命令 时间限制(ms) 内存限制(KB) 输入文件 输出文件
          ```
 
