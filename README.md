@@ -31,7 +31,7 @@ Web部分没什么好说的，网上看看Spring Boot和Vue的教程即可，这
       2. 生成docker命令，比如对于Java，命令为
 
          ```
-         docker run --rm -v $cwd:$containerCwd -w containerCwd openjdk:8 /bin/sh -c "javac Main.Java"
+         docker run --rm -v $cwd:$containerCwd -w $containerCwd openjdk:8 /bin/sh -c "javac Main.Java"
          --rm 表示容器退出后自动删除该容器
          -v 将服务器的cwd目录映射到容器中的containerCwd目录（比如/tmp）
          -w 设置容器启动后的工作目录
